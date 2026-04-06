@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
     if (!wallet) {
       return NextResponse.json({ error: 'No embedded wallet found' }, { status: 404 });
     }
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL;
     return NextResponse.json({
       walletId: wallet.address,
       publicKey: (wallet as any).publicKey ?? wallet.address,
