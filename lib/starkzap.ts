@@ -248,8 +248,16 @@ export async function sendCoffee(
 
   // If paying in non-USDC, swap first then transfer
   if (payWithToken !== 'USDC') {
+    onProgress?.(`Checking ${payWithToken} balance…`);
+    const amountIn = Amount.parse(usdcAmount, payToken);
+    const payBalance = await supporterWallet.balanceOf(payToken);
+    if (payBalance.lt(amountIn)) {
+      throw new Error(
+        `Insufficient ${payWithToken} balance. You have ${payBalance.toFormatted(true)} but need approximately ${amountIn.toFormatted(true)}.`
+      );
+    }
+
     onProgress?.(`Getting quote: ${payWithToken} → USDC...`);
-    const amountIn = Amount.parse(usdcAmount, payToken); // approximate
     const q = await supporterWallet.getQuote({ tokenIn: payToken, tokenOut: USDC, amountIn });
     const outVal = (Number(q.amountOutBase) / 10 ** USDC.decimals).toFixed(2);
 
@@ -265,9 +273,18 @@ export async function sendCoffee(
     return tx;
   }
 
+  onProgress?.('Checking balance…');
+  const needed = Amount.parse(usdcAmount, USDC);
+  const balance = await supporterWallet.balanceOf(USDC);
+  if (balance.lt(needed)) {
+    throw new Error(
+      `Insufficient USDC balance. You have ${balance.toFormatted(true)} but need ${needed.toFormatted(true)}. ` +
+      `Get Sepolia USDC from a faucet to continue.`
+    );
+  }
+
   onProgress?.('Sending USDC...');
-  // REAL: wallet.transfer(USDC, [{ to: creatorAddress, amount }], { feeMode: 'sponsored' })
-  const tx = await supporterWallet.transfer(USDC, [{ to: creatorAddress, amount: Amount.parse(usdcAmount, USDC) }], { feeMode: 'sponsored' });
+  const tx = await supporterWallet.transfer(USDC, [{ to: creatorAddress, amount: needed }], { feeMode: 'sponsored' });
   await tx.wait();
   return tx;
 }

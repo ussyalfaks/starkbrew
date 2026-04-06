@@ -20,6 +20,7 @@ export default function CreatorPage({ params }: { params: Promise<{ slug: string
   const [paying, setPaying] = useState(false);
   const [progress, setProgress] = useState('');
   const [done, setDone] = useState(false);
+  const [addrCopied, setAddrCopied] = useState(false);
 
   const { ready, authenticated, login, getAccessToken } = usePrivy();
   const { wallet, setWallet, addSupport } = useStore();
@@ -217,6 +218,27 @@ export default function CreatorPage({ params }: { params: Promise<{ slug: string
             style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--border)', borderRadius: 'var(--r-sm)', fontSize: 14, fontFamily: 'var(--font)', background: 'var(--cream2)', color: 'var(--text)', outline: 'none', resize: 'none', boxSizing: 'border-box' }}
           />
         </div>
+
+        {wallet && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 10px', background: 'var(--cream2)', borderRadius: 'var(--r-sm)', marginBottom: 12 }}>
+            <div>
+              <div style={{ fontFamily: 'var(--mono)', fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text3)', marginBottom: 2 }}>Your wallet</div>
+              <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--brown2)' }}>
+                {wallet.address.slice(0, 10)}…{wallet.address.slice(-6)}
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                navigator.clipboard?.writeText(wallet.address);
+                setAddrCopied(true);
+                setTimeout(() => setAddrCopied(false), 2000);
+              }}
+              style={{ fontFamily: 'var(--mono)', fontSize: 11, color: addrCopied ? 'var(--green)' : 'var(--brown3)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px' }}
+            >
+              {addrCopied ? 'Copied ✓' : 'Copy'}
+            </button>
+          </div>
+        )}
 
         {paying && progress && (
           <p style={{ fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--brown3)', marginBottom: 10 }}>
