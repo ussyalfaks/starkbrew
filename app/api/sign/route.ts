@@ -3,9 +3,12 @@ import { PrivyClient } from '@privy-io/server-auth';
 
 const PRIVY_APP_ID     = process.env.NEXT_PUBLIC_PRIVY_APP_ID ?? '';
 const PRIVY_APP_SECRET = process.env.PRIVY_APP_SECRET ?? '';
+const PRIVY_AUTH_KEY   = process.env.PRIVY_AUTHORIZATION_PRIVATE_KEY;
 
 const privy = PRIVY_APP_ID && PRIVY_APP_SECRET
-  ? new PrivyClient(PRIVY_APP_ID, PRIVY_APP_SECRET)
+  ? new PrivyClient(PRIVY_APP_ID, PRIVY_APP_SECRET, {
+      walletApi: { authorizationPrivateKey: PRIVY_AUTH_KEY },
+    })
   : null;
 
 export async function POST(req: NextRequest) {
