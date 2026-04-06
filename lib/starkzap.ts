@@ -97,8 +97,8 @@ class StarkZapWalletAdapter implements WalletInterface {
   }
 
   async balanceOf(token: Token): Promise<Amount> {
-    const balance = await this.wallet.balanceOf(token.address);
-    return Amount.fromRaw(balance, token);
+    const sdkAmount = await this.wallet.balanceOf(token);
+    return Amount.fromRaw(sdkAmount.toBase(), token);
   }
 
   async transfer(
