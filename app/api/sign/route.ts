@@ -30,9 +30,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { signature } = await (privy as any).wallets().rawSign(walletId, {
-      params: { hash },
-    });
+    const { signature } = await privy.walletApi.ethereum.secp256k1Sign({ walletId, hash });
     return NextResponse.json({ signature });
   } catch (e: any) {
     return NextResponse.json({ error: e.message || 'Signing failed' }, { status: 500 });

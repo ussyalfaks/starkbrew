@@ -35,9 +35,13 @@ export async function POST(req: NextRequest) {
     if (!wallet) {
       return NextResponse.json({ error: 'No embedded wallet found' }, { status: 404 });
     }
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+    const serverId = (wallet as any).id as string | null | undefined;
+    if (!serverId) {
+      return NextResponse.json({ error: 'Wallet not on unified wallets stack — enable server wallets in Privy dashboard' }, { status: 400 });
+    }
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL;
     return NextResponse.json({
-      walletId: wallet.address,
+      walletId: serverId,
       publicKey: (wallet as any).publicKey ?? wallet.address,
       serverUrl: `${appUrl}/api/sign`,
     });
