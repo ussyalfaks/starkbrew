@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrivyClient as PrivyAuthClient } from '@privy-io/server-auth';
 import { PrivyClient } from '@privy-io/node';
+import { supabaseAdmin } from '@/lib/supabase';
 
 const PRIVY_APP_ID     = process.env.NEXT_PUBLIC_PRIVY_APP_ID ?? '';
 const PRIVY_APP_SECRET = process.env.PRIVY_APP_SECRET ?? '';
@@ -32,17 +33,36 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    // Look for an existing server-managed Starknet wallet for this user
-    const existing = await privyNode.wallets().list({ user_id: userId, chain_type: 'starknet' });
-    let wallet = existing.data?.[0];
+    // Check if we already have a Starknet wallet for this user in our DB
+    const { data: existing } = await supabaseAdmin
+      .from('starknet_wallets')
+      .select('wallet_id, public_key, address')
+      .eq('privy_user_id', userId)
+      .single();
 
-    // If none exists, create one (server-managed, Starknet, linked to this user)
-    if (!wallet) {
-      wallet = await privyNode.wallets().create({
-        chain_type: 'starknet',
-        owner: { user_id: userId },
+    if (existing) {
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+      return NextResponse.json({
+        walletId: existing.wallet_id,
+        publicKey: existing.public_key,
+        serverUrl: `${appUrl}/api/sign`,
       });
     }
+
+    // Create a new server-managed Starknet wallet
+    const wallet = await privyNode.wallets().create({
+      chain_type: 'starknet',
+      owner: { user_id: userId },
+      idempotency_key: `starknet-${userId}`,
+    });
+
+    // Store it so we can look it up next time
+    await supabaseAdmin.from('starknet_wallets').insert({
+      privy_user_id: userId,
+      wallet_id: wallet.id,
+      public_key: (wallet as any).public_key ?? '',
+      address: wallet.address,
+    });
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL;
     return NextResponse.json({
