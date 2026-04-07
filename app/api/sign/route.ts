@@ -1,28 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrivyClient } from '@privy-io/server-auth';
+import { PrivyClient as PrivyAuthClient } from '@privy-io/server-auth';
+import { PrivyClient } from '@privy-io/node';
 
 const PRIVY_APP_ID     = process.env.NEXT_PUBLIC_PRIVY_APP_ID ?? '';
 const PRIVY_APP_SECRET = process.env.PRIVY_APP_SECRET ?? '';
-const PRIVY_AUTH_KEY   = process.env.PRIVY_AUTHORIZATION_PRIVATE_KEY;
 
-const privy = PRIVY_APP_ID && PRIVY_APP_SECRET
-  ? new PrivyClient(PRIVY_APP_ID, PRIVY_APP_SECRET, {
-      walletApi: { authorizationPrivateKey: PRIVY_AUTH_KEY },
-    })
+// For token verification only
+const privyAuth = PRIVY_APP_ID && PRIVY_APP_SECRET
+  ? new PrivyAuthClient(PRIVY_APP_ID, PRIVY_APP_SECRET)
+  : null;
+
+// For wallet signing — new SDK with user_jwts authorization
+const privyNode = PRIVY_APP_ID && PRIVY_APP_SECRET
+  ? new PrivyClient({ appId: PRIVY_APP_ID, appSecret: PRIVY_APP_SECRET })
   : null;
 
 export async function POST(req: NextRequest) {
-  if (!privy) {
+  if (!privyAuth || !privyNode) {
     return NextResponse.json({ error: 'Privy not configured' }, { status: 503 });
   }
 
-  // Validate the caller is an authenticated user
   const token = (req.headers.get('Authorization') ?? '').replace('Bearer ', '');
   if (!token) {
     return NextResponse.json({ error: 'Missing token' }, { status: 401 });
   }
   try {
-    await privy.verifyAuthToken(token);
+    await privyAuth.verifyAuthToken(token);
   } catch {
     return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
   }
@@ -33,8 +36,11 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { signature } = await privy.walletApi.ethereum.secp256k1Sign({ walletId, hash });
-    return NextResponse.json({ signature });
+    const result = await privyNode.wallets().rawSign(walletId, {
+      params: { hash },
+      authorization_context: { user_jwts: [token] },
+    });
+    return NextResponse.json({ signature: result.signature });
   } catch (e: any) {
     return NextResponse.json({ error: e.message || 'Signing failed' }, { status: 500 });
   }
