@@ -113,16 +113,12 @@ class StarkZapWalletAdapter implements WalletInterface {
     }));
 
     const tx = await this.wallet.execute(calls, { feeMode: opts?.feeMode });
-    const network = process.env.NEXT_PUBLIC_NETWORK || 'sepolia';
-    const explorerBase = network === 'mainnet'
-      ? 'https://voyager.online'
-      : 'https://sepolia.voyager.online';
 
     return {
-      transaction_hash: tx.transaction_hash,
-      explorerUrl: `${explorerBase}/tx/${tx.transaction_hash}`,
+      transaction_hash: tx.hash,
+      explorerUrl: tx.explorerUrl,
       wait: async () => {
-        await this.wallet.waitForTransaction(tx.transaction_hash);
+        await tx.wait();
         return { status: 'ACCEPTED_ON_L2' };
       },
     };
@@ -140,16 +136,12 @@ class StarkZapWalletAdapter implements WalletInterface {
     };
 
     const tx = await this.wallet.swap(swapParams, { feeMode: opts?.feeMode });
-    const network = process.env.NEXT_PUBLIC_NETWORK || 'sepolia';
-    const explorerBase = network === 'mainnet'
-      ? 'https://voyager.online'
-      : 'https://sepolia.voyager.online';
 
     return {
-      transaction_hash: tx.transaction_hash,
-      explorerUrl: `${explorerBase}/tx/${tx.transaction_hash}`,
+      transaction_hash: tx.hash,
+      explorerUrl: tx.explorerUrl,
       wait: async () => {
-        await this.wallet.waitForTransaction(tx.transaction_hash);
+        await tx.wait();
         return { status: 'ACCEPTED_ON_L2' };
       },
     };
