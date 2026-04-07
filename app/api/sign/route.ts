@@ -5,12 +5,11 @@ import { PrivyClient } from '@privy-io/node';
 const PRIVY_APP_ID     = process.env.NEXT_PUBLIC_PRIVY_APP_ID ?? '';
 const PRIVY_APP_SECRET = process.env.PRIVY_APP_SECRET ?? '';
 
-// For token verification only
 const privyAuth = PRIVY_APP_ID && PRIVY_APP_SECRET
   ? new PrivyAuthClient(PRIVY_APP_ID, PRIVY_APP_SECRET)
   : null;
 
-// For wallet signing — new SDK with user_jwts authorization
+// Server-managed wallets — no authorization key needed, app credentials are enough
 const privyNode = PRIVY_APP_ID && PRIVY_APP_SECRET
   ? new PrivyClient({ appId: PRIVY_APP_ID, appSecret: PRIVY_APP_SECRET })
   : null;
@@ -36,9 +35,9 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    // Server-managed wallet — sign with app credentials, no JWT needed
     const result = await privyNode.wallets().rawSign(walletId, {
       params: { hash },
-      authorization_context: { user_jwts: [token] },
     });
     return NextResponse.json({ signature: result.signature });
   } catch (e: any) {

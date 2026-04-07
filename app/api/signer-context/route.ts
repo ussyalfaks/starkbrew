@@ -1,18 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrivyClient } from '@privy-io/server-auth';
+import { PrivyClient as PrivyAuthClient } from '@privy-io/server-auth';
+import { PrivyClient } from '@privy-io/node';
 
 const PRIVY_APP_ID     = process.env.NEXT_PUBLIC_PRIVY_APP_ID ?? '';
 const PRIVY_APP_SECRET = process.env.PRIVY_APP_SECRET ?? '';
-const PRIVY_AUTH_KEY   = process.env.PRIVY_AUTHORIZATION_PRIVATE_KEY?.replace(/\\n/g, '\n');
 
-const privy = PRIVY_APP_ID && PRIVY_APP_SECRET
-  ? new PrivyClient(PRIVY_APP_ID, PRIVY_APP_SECRET, {
-      walletApi: { authorizationPrivateKey: PRIVY_AUTH_KEY },
-    })
+const privyAuth = PRIVY_APP_ID && PRIVY_APP_SECRET
+  ? new PrivyAuthClient(PRIVY_APP_ID, PRIVY_APP_SECRET)
+  : null;
+
+const privyNode = PRIVY_APP_ID && PRIVY_APP_SECRET
+  ? new PrivyClient({ appId: PRIVY_APP_ID, appSecret: PRIVY_APP_SECRET })
   : null;
 
 export async function POST(req: NextRequest) {
-  if (!privy) {
+  if (!privyAuth || !privyNode) {
     return NextResponse.json({ error: 'Privy not configured' }, { status: 503 });
   }
 
@@ -23,32 +25,32 @@ export async function POST(req: NextRequest) {
 
   let userId: string;
   try {
-    const claims = await privy.verifyAuthToken(token);
+    const claims = await privyAuth.verifyAuthToken(token);
     userId = claims.userId;
   } catch {
     return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
   }
 
   try {
-    const user = await privy.getUser(userId);
-    const wallet = user.linkedAccounts.find(
-      (a): a is Extract<typeof a, { type: 'wallet' }> =>
-        a.type === 'wallet' && (a as any).walletClientType === 'privy'
-    );
+    // Look for an existing server-managed Starknet wallet for this user
+    const existing = await privyNode.wallets().list({ user_id: userId, chain_type: 'starknet' });
+    let wallet = existing.data?.[0];
+
+    // If none exists, create one (server-managed, Starknet, linked to this user)
     if (!wallet) {
-      return NextResponse.json({ error: 'No embedded wallet found' }, { status: 404 });
+      wallet = await privyNode.wallets().create({
+        chain_type: 'starknet',
+        owner: { user_id: userId },
+      });
     }
-    const serverId = (wallet as any).id as string | null | undefined;
-    if (!serverId) {
-      return NextResponse.json({ error: 'Wallet not on unified wallets stack — enable server wallets in Privy dashboard' }, { status: 400 });
-    }
+
     const appUrl = process.env.NEXT_PUBLIC_APP_URL;
     return NextResponse.json({
-      walletId: serverId,
-      publicKey: (wallet as any).publicKey ?? wallet.address,
+      walletId: wallet.id,
+      publicKey: (wallet as any).public_key ?? wallet.address,
       serverUrl: `${appUrl}/api/sign`,
     });
-  } catch {
-    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message || 'Internal error' }, { status: 500 });
   }
 }
