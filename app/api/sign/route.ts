@@ -34,10 +34,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Missing walletId or hash' }, { status: 400 });
   }
 
+  const authKey = process.env.PRIVY_AUTH_KEY_BASE64 ?? '';
+
   try {
-    // Server-managed wallet — sign with app credentials, no JWT needed
+    // Server-managed wallet owned by authorization key quorum — must provide the key
     const result = await privyNode.wallets().rawSign(walletId, {
       params: { hash },
+      ...(authKey ? { authorization_context: { authorization_private_keys: [authKey] } } : {}),
     });
     return NextResponse.json({ signature: result.signature });
   } catch (e: any) {

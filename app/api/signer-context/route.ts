@@ -49,10 +49,11 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Create a new server-managed Starknet wallet (no owner = app controls it, no JWT needed for signing)
+    // Create a server-managed Starknet wallet owned by our authorization key quorum
     const wallet = await privyNode.wallets().create({
       chain_type: 'starknet',
-      idempotency_key: `starknet-${userId}`,
+      owner_id: process.env.PRIVY_QUORUM_ID!,
+      idempotency_key: `starknet-v3-${userId}`,
     });
 
     // Store it so we can look it up next time
