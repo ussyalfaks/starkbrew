@@ -71,11 +71,25 @@ export function Nav() {
         <span style={{ fontFamily: 'var(--display)', fontWeight: 700, fontSize: 18, color: 'var(--brown)', letterSpacing: '-0.02em' }}>
           StarkBrew
         </span>
+        <span style={{
+          fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 600,
+          color: '#7c5c2e', background: '#f5e9c8', border: '1px solid #e0c97a',
+          borderRadius: 4, padding: '2px 6px', letterSpacing: '0.06em',
+          textTransform: 'uppercase',
+        }}>
+          Sepolia
+        </span>
       </Link>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
         <Link href="/explore" style={{ textDecoration: 'none', fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--text2)' }}>
           Explore
+        </Link>
+        <Link href="/membership" style={{ textDecoration: 'none', fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--text2)' }}>
+          Membership
+        </Link>
+        <Link href="/shop" style={{ textDecoration: 'none', fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--text2)' }}>
+          Shop
         </Link>
         {profile && (
           <>
@@ -96,14 +110,19 @@ export function Nav() {
             </Badge>
             <button
               onClick={handleDisconnect}
+              title="Disconnect"
               style={{
                 background: 'none', border: 'none', cursor: 'pointer',
-                fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--text3)',
-                padding: '2px 6px', borderRadius: 4,
-                textDecoration: 'underline',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                padding: 4, borderRadius: 4, color: 'var(--text3)',
+                lineHeight: 1,
               }}
             >
-              disconnect
+              {/* Power / disconnect icon */}
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18.36 6.64A9 9 0 1 1 5.64 6.64" />
+                <line x1="12" y1="2" x2="12" y2="12" />
+              </svg>
             </button>
           </div>
         ) : (
