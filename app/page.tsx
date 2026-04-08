@@ -6,18 +6,31 @@ import { useStore } from '@/store';
 import { onboardCreator } from '@/lib/starkzap';
 import { Button, Badge, CoffeeCup, toast } from '@/components/ui';
 
-const EXAMPLE_CREATORS = [
-  { name: 'Maya Chen', emoji: '🎨', bio: 'Indie game developer & pixel artist', coffees: 42, raised: '126.00' },
-  { name: 'Luca Romano', emoji: '🎵', bio: 'Open-source music producer', coffees: 89, raised: '267.00' },
-  { name: 'Priya Sharma', emoji: '✍️', bio: 'Web3 technical writer', coffees: 31, raised: '93.00' },
-];
+interface Creator {
+  slug: string;
+  name: string;
+  bio: string;
+  avatar_emoji: string;
+  total_raised: string;
+  supporter_count: number;
+}
 
 export default function HomePage() {
   const [connecting, setConnecting] = useState(false);
   const [pendingConnect, setPendingConnect] = useState(false);
+  const [creators, setCreators] = useState<Creator[]>([]);
+  const [creatorsLoading, setCreatorsLoading] = useState(true);
   const { wallet, setWallet, profile } = useStore();
   const router = useRouter();
   const { ready, authenticated, login, getAccessToken } = usePrivy();
+
+  useEffect(() => {
+    fetch('/api/creators')
+      .then((r) => r.json())
+      .then((data) => setCreators(Array.isArray(data) ? data : []))
+      .catch(() => setCreators([]))
+      .finally(() => setCreatorsLoading(false));
+  }, []);
 
   // After Privy login completes, proceed with wallet onboarding
   useEffect(() => {
@@ -54,7 +67,7 @@ export default function HomePage() {
         <div style={{ marginBottom: 16 }}>
           <Badge variant="gold">
             <span style={{ width: 6, height: 6, background: 'var(--gold)', borderRadius: '50%', display: 'inline-block' }} />
-            Gasless · Powered by Starkzap
+            Powered by Starkzap
           </Badge>
         </div>
 
@@ -125,32 +138,40 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Example creator pages */}
-      <div className="animate-fade-up delay-2" style={{ marginBottom: 48 }}>
-        <p style={{ fontFamily: 'var(--mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text3)', marginBottom: 16, textAlign: 'center' }}>
-          Live pages
-        </p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {EXAMPLE_CREATORS.map((c) => (
-            <div key={c.name} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', background: '#fff', border: '1px solid var(--border)', borderRadius: 'var(--r)', boxShadow: '0 1px 4px rgba(44,26,14,0.04)' }}>
-              <div style={{ fontSize: 28, width: 44, height: 44, background: 'var(--cream2)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{c.emoji}</div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--brown)', marginBottom: 2 }}>{c.name}</div>
-                <div style={{ fontSize: 12, color: 'var(--text3)' }}>{c.bio}</div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontFamily: 'var(--display)', fontWeight: 700, fontSize: 16, color: 'var(--brown)', marginBottom: 2 }}>${c.raised}</div>
-                <div style={{ fontSize: 11, color: 'var(--text3)', fontFamily: 'var(--mono)' }}>{c.coffees} ☕</div>
-              </div>
-            </div>
-          ))}
+      {/* Live creator pages */}
+      {(creatorsLoading || creators.length > 0) && (
+        <div className="animate-fade-up delay-2" style={{ marginBottom: 48 }}>
+          <p style={{ fontFamily: 'var(--mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text3)', marginBottom: 16, textAlign: 'center' }}>
+            Live pages
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {creatorsLoading ? (
+              [0, 1, 2].map((i) => (
+                <div key={i} style={{ height: 72, background: 'var(--cream2)', borderRadius: 'var(--r)', border: '1px solid var(--border)', opacity: 0.6 }} />
+              ))
+            ) : (
+              creators.slice(0, 5).map((c) => (
+                <a key={c.slug} href={`/c/${c.slug}`} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', background: '#fff', border: '1px solid var(--border)', borderRadius: 'var(--r)', boxShadow: '0 1px 4px rgba(44,26,14,0.04)' }}>
+                  <div style={{ fontSize: 28, width: 44, height: 44, background: 'var(--cream2)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{c.avatar_emoji}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--brown)', marginBottom: 2 }}>{c.name}</div>
+                    <div style={{ fontSize: 12, color: 'var(--text3)' }}>{c.bio}</div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontFamily: 'var(--display)', fontWeight: 700, fontSize: 16, color: 'var(--brown)', marginBottom: 2 }}>${c.total_raised}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text3)', fontFamily: 'var(--mono)' }}>{c.supporter_count} ☕</div>
+                  </div>
+                </a>
+              ))
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Features strip */}
       <div className="animate-fade-up delay-3">
         <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 8 }}>
-          {['$0 gas fees', 'USDC / STRK / ETH', 'Auto-swap via AVNU', 'Privy auth', 'Starknet', 'Instant settlement'].map(f => (
+          {['$0 gas fees', 'USDC / STRK / ETH','StarZap', 'Auto-swap via AVNU', 'Privy auth', 'Starknet', 'Instant settlement'].map(f => (
             <Badge key={f} variant="muted">{f}</Badge>
           ))}
         </div>
