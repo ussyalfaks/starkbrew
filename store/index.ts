@@ -8,6 +8,11 @@ interface AppState {
   // Runtime wallet (not persisted)
   wallet: WalletInterface | null;
   setWallet: (w: WalletInterface) => void;
+  clearWallet: () => void;
+
+  // Persisted flag — true after user explicitly clicks Connect
+  hasConnected: boolean;
+  setHasConnected: (v: boolean) => void;
 
   // Creator profile (persisted)
   profile: CreatorProfile | null;
@@ -24,6 +29,10 @@ export const useStore = create<AppState>()(
     (set, get) => ({
       wallet: null,
       setWallet: (wallet) => set({ wallet }),
+      clearWallet: () => set({ wallet: null }),
+
+      hasConnected: false,
+      setHasConnected: (hasConnected) => set({ hasConnected }),
 
       profile: null,
       setProfile: (profile) => set({ profile }),
@@ -38,7 +47,7 @@ export const useStore = create<AppState>()(
     }),
     {
       name: 'starkbrew-store',
-      partialize: (s) => ({ profile: s.profile, supports: s.supports }),
+      partialize: (s) => ({ profile: s.profile, supports: s.supports, hasConnected: s.hasConnected }),
     }
   )
 );
