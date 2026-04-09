@@ -9,6 +9,7 @@ interface Creator {
   name: string;
   bio: string;
   avatar_emoji: string;
+  avatar_url?: string;
   coffee_price: string;
   total_raised: string;
   supporter_count: number;
@@ -122,7 +123,11 @@ export default function ExplorePage() {
                     style={{ cursor: 'pointer', padding: '20px 18px', transition: 'box-shadow 0.2s', height: '100%' }}
                   >
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 12 }}>
-                      <div style={{ fontSize: 32, lineHeight: 1, flexShrink: 0 }}>{c.avatar_emoji}</div>
+                      {c.avatar_url ? (
+                        <img src={c.avatar_url} alt={c.name} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                      ) : (
+                        <div style={{ fontSize: 32, lineHeight: 1, flexShrink: 0 }}>{c.avatar_emoji}</div>
+                      )}
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
                           <span style={{ fontFamily: 'var(--display)', fontWeight: 800, fontSize: 15, color: 'var(--brown)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.name}</span>

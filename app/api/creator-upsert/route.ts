@@ -28,6 +28,7 @@ export async function POST(req: NextRequest) {
       name: profile.name,
       bio: profile.bio,
       avatar_emoji: profile.avatarEmoji,
+      avatar_url: profile.avatarUrl ?? null,
       coffee_price: profile.coffeePrice,
       wallet_address: profile.walletAddress,
       goal_amount: profile.goalAmount ?? null,

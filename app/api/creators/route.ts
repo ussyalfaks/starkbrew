@@ -4,7 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 export async function GET() {
   const { data, error } = await supabaseAdmin
     .from('creators')
-    .select('slug, name, bio, avatar_emoji, coffee_price, total_raised, supporter_count, goal_amount, goal_label')
+    .select('slug, name, bio, avatar_emoji, avatar_url, coffee_price, total_raised, supporter_count, goal_amount, goal_label')
     .order('total_raised', { ascending: false })
     .limit(50);
 

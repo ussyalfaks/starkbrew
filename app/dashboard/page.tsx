@@ -35,7 +35,11 @@ export default function DashboardPage() {
     <div style={{ maxWidth: 560, margin: '0 auto', padding: '36px 24px 80px' }}>
       {/* Header */}
       <div className="animate-fade-up" style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 28 }}>
-        <div style={{ fontSize: 44 }}>{profile.avatarEmoji}</div>
+        {profile.avatarUrl ? (
+          <img src={profile.avatarUrl} alt={profile.name} style={{ width: 52, height: 52, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+        ) : (
+          <div style={{ fontSize: 44 }}>{profile.avatarEmoji}</div>
+        )}
         <div style={{ flex: 1 }}>
           <h2 style={{ fontFamily: 'var(--display)', fontSize: 22, fontWeight: 800, color: 'var(--brown)', marginBottom: 2 }}>{profile.name}</h2>
           <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--text3)' }}>starkbrew.xyz/c/{profile.slug}</div>
