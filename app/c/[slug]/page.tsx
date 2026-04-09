@@ -259,7 +259,7 @@ export default function CreatorPage({ params }: { params: Promise<{ slug: string
           {paying ? 'Processing…' : `Support $${coffeeTotal} USDC →`}
         </Button>
         <p style={{ textAlign: 'center', fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--text3)', marginTop: 8 }}>
-          Via Privy · Gas free · Powered by Starzap
+          Via Privy · Gas free · Powered by Starkzap
         </p>
       </Card>
 
