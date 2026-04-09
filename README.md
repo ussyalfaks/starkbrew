@@ -152,11 +152,7 @@ Every payment is a direct `wallet.transfer(USDC, recipients)` call on the existi
 
 ## V2 features that would need a contract
 
-| Feature | Why a contract |
-|---|---|
-| Goal-based escrow | Hold funds until target hit, auto-refund if not |
-| NFT supporter badge | ERC721 mint on payment |
-| Revenue split | Auto-split payment between multiple creators |
-| Recurring subscriptions | Time-locked streaming payments |
-| Trustless milestones | Release tranches as goals are reached |
+- **Membership plans** — Creators can define recurring membership tiers (e.g. Bronze / Silver / Gold) with perks, priced in USDC/month. A subscription contract would handle recurring on-chain payments and gate access to member-only content.
+
+- **Creator shop** — Creators can list digital products (downloads, presets, templates, exclusive content) for sale directly from their page. A shop contract would manage listings, handle USDC payments, and optionally enforce access via NFT receipts.
 
