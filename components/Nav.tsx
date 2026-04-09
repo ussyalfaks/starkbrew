@@ -7,7 +7,7 @@ import { onboardCreator } from '@/lib/starkzap';
 import { Badge, Button } from '@/components/ui';
 
 export function Nav() {
-  const { wallet, profile, setWallet, clearWallet, hasConnected, setHasConnected } = useStore();
+  const { wallet, profile, setWallet, setProfile, clearWallet, hasConnected, setHasConnected } = useStore();
   const { ready, authenticated, login, logout, getAccessToken } = usePrivy();
   const [connecting, setConnecting] = useState(false);
   const [pendingConnect, setPendingConnect] = useState(false);
@@ -19,13 +19,38 @@ export function Nav() {
 
   // On page refresh: if user had previously connected and Privy session is still active,
   // silently restore the wallet without requiring a click.
+  // Also restores the profile from the DB in case localStorage was cleared.
   useEffect(() => {
     if (!ready || !authenticated || wallet || !hasConnected || reconnectAttempted.current) return;
     reconnectAttempted.current = true;
     onboardCreator(getAccessToken)
-      .then(setWallet)
+      .then(async (w) => {
+        setWallet(w);
+        if (!profile) {
+          const res = await fetch(`/api/my-profile?address=${w.address}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data && !data.error) {
+              setProfile({
+                slug: data.slug,
+                name: data.name,
+                bio: data.bio,
+                avatarEmoji: data.avatar_emoji,
+                avatarUrl: data.avatar_url || undefined,
+                coffeePrice: data.coffee_price,
+                walletAddress: data.wallet_address,
+                goalAmount: data.goal_amount || undefined,
+                goalLabel: data.goal_label || undefined,
+                totalRaised: data.total_raised,
+                supporterCount: data.supporter_count,
+                createdAt: data.created_at,
+              });
+            }
+          }
+        }
+      })
       .catch(() => { reconnectAttempted.current = false; });
-  }, [ready, authenticated, wallet, hasConnected, getAccessToken, setWallet]);
+  }, [ready, authenticated, wallet, hasConnected, getAccessToken, setWallet, setProfile, profile]);
 
   // After Privy login modal completes, proceed with wallet onboarding
   useEffect(() => {
