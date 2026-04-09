@@ -4,7 +4,6 @@ import { useRouter } from 'next/navigation';
 import { usePrivy } from '@privy-io/react-auth';
 import { useStore, buildProfile } from '@/store';
 import { Button, Input, Steps, Card, Badge, toast } from '@/components/ui';
-import { supabase } from '@/lib/supabase';
 
 const EMOJIS = ['☕','🎨','🎵','✍️','🎮','📷','🎬','🎤','💻','📚','🌱','🔬','🎯','⚡','🚀'];
 
@@ -29,12 +28,12 @@ export default function SetupPage() {
   async function uploadAvatar(file: File) {
     setUploading(true);
     try {
-      const ext = file.name.split('.').pop();
-      const path = `${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from('avatars').upload(path, file, { upsert: true });
-      if (error) throw error;
-      const { data } = supabase.storage.from('avatars').getPublicUrl(path);
-      setAvatarUrl(data.publicUrl);
+      const form = new FormData();
+      form.append('file', file);
+      const res = await fetch('/api/upload-avatar', { method: 'POST', body: form });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Upload failed');
+      setAvatarUrl(json.url);
       toast('Photo uploaded!');
     } catch {
       toast('Upload failed', 'error');
