@@ -5,6 +5,7 @@ export interface CreatorProfile {
   name: string;
   bio: string;
   avatarEmoji: string;       // e.g. "☕"
+  avatarUrl?: string;        // uploaded image URL (Uploadthing)
   coffeePrice: string;       // USDC per coffee e.g. "3.00"
   walletAddress: string;
   goalAmount?: string;       // optional goal e.g. "150.00"

@@ -61,6 +61,7 @@ export function buildProfile(
   walletAddress: string,
   goalAmount?: string,
   goalLabel?: string,
+  avatarUrl?: string,
 ): CreatorProfile {
   const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   return {
@@ -68,6 +69,7 @@ export function buildProfile(
     name,
     bio,
     avatarEmoji,
+    avatarUrl,
     coffeePrice,
     walletAddress,
     goalAmount,

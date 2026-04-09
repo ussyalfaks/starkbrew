@@ -40,6 +40,7 @@ export default function CreatorPage({ params }: { params: Promise<{ slug: string
           name: data.name,
           bio: data.bio,
           avatarEmoji: data.avatar_emoji,
+          avatarUrl: data.avatar_url || undefined,
           coffeePrice: data.coffee_price,
           walletAddress: data.wallet_address,
           goalAmount: data.goal_amount,
@@ -154,7 +155,15 @@ export default function CreatorPage({ params }: { params: Promise<{ slug: string
     <div style={{ maxWidth: 480, margin: '0 auto', padding: '40px 24px 80px' }}>
       {/* Creator header */}
       <div className="animate-fade-up" style={{ textAlign: 'center', marginBottom: 32 }}>
-        <div style={{ fontSize: 64, marginBottom: 12 }}>{creator.avatarEmoji}</div>
+        {creator.avatarUrl ? (
+          <img
+            src={creator.avatarUrl}
+            alt={creator.name}
+            style={{ width: 88, height: 88, borderRadius: '50%', objectFit: 'cover', marginBottom: 12, display: 'inline-block' }}
+          />
+        ) : (
+          <div style={{ fontSize: 64, marginBottom: 12 }}>{creator.avatarEmoji}</div>
+        )}
         <h1 style={{ fontFamily: 'var(--display)', fontSize: 28, fontWeight: 800, color: 'var(--brown)', marginBottom: 8 }}>
           {creator.name}
         </h1>
@@ -250,7 +259,7 @@ export default function CreatorPage({ params }: { params: Promise<{ slug: string
           {paying ? 'Processing…' : `Support $${coffeeTotal} USDC →`}
         </Button>
         <p style={{ textAlign: 'center', fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--text3)', marginTop: 8 }}>
-          Via Privy · Gas free · Powered by Starknet
+          Via Privy · Gas free · Powered by Starzap
         </p>
       </Card>
 

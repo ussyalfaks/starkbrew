@@ -1,9 +1,10 @@
 'use client';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { usePrivy } from '@privy-io/react-auth';
 import { useStore, buildProfile } from '@/store';
 import { Button, Input, Steps, Card, Badge, toast } from '@/components/ui';
+import { supabase } from '@/lib/supabase';
 
 const EMOJIS = ['☕','🎨','🎵','✍️','🎮','📷','🎬','🎤','💻','📚','🌱','🔬','🎯','⚡','🚀'];
 
@@ -17,10 +18,29 @@ export default function SetupPage() {
   const [name, setName]               = useState(profile?.name || '');
   const [bio, setBio]                 = useState(profile?.bio || '');
   const [emoji, setEmoji]             = useState(profile?.avatarEmoji || '☕');
+  const [avatarUrl, setAvatarUrl]     = useState(profile?.avatarUrl || '');
+  const [uploading, setUploading]     = useState(false);
+  const fileInputRef                  = useRef<HTMLInputElement>(null);
   const [coffeePrice, setCoffeePrice] = useState(profile?.coffeePrice || '3.00');
   const [goalAmount, setGoalAmount]   = useState(profile?.goalAmount || '');
   const [goalLabel, setGoalLabel]     = useState(profile?.goalLabel || '');
   const [saving, setSaving]           = useState(false);
+
+  async function uploadAvatar(file: File) {
+    setUploading(true);
+    try {
+      const ext = file.name.split('.').pop();
+      const path = `${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from('avatars').upload(path, file, { upsert: true });
+      if (error) throw error;
+      const { data } = supabase.storage.from('avatars').getPublicUrl(path);
+      setAvatarUrl(data.publicUrl);
+      toast('Photo uploaded!');
+    } catch {
+      toast('Upload failed', 'error');
+    }
+    setUploading(false);
+  }
 
   if (!wallet) { router.push('/'); return null; }
 
@@ -34,7 +54,7 @@ export default function SetupPage() {
       let savedProfile;
       if (isEditing && profile) {
         const patch = {
-          name, bio, avatarEmoji: emoji, coffeePrice,
+          name, bio, avatarEmoji: emoji, avatarUrl: avatarUrl || undefined, coffeePrice,
           goalAmount: goalAmount || undefined,
           goalLabel: goalLabel || undefined,
           slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
@@ -42,7 +62,7 @@ export default function SetupPage() {
         updateProfile(patch);
         savedProfile = { ...profile, ...patch };
       } else {
-        savedProfile = buildProfile(name, bio, emoji, coffeePrice, wallet.address, goalAmount || undefined, goalLabel || undefined);
+        savedProfile = buildProfile(name, bio, emoji, coffeePrice, wallet.address, goalAmount || undefined, goalLabel || undefined, avatarUrl || undefined);
         setProfile(savedProfile);
       }
 
@@ -81,19 +101,84 @@ export default function SetupPage() {
           </div>
           <p style={{ fontSize: 14, color: 'var(--text2)', marginBottom: 28 }}>Tell your supporters who you are.</p>
 
-          {/* Emoji picker */}
+          {/* Avatar */}
           <div style={{ marginBottom: 20 }}>
             <div style={{ fontFamily: 'var(--mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text3)', marginBottom: 8 }}>Avatar</div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
-              {EMOJIS.map(e => (
-                <button key={e} onClick={() => setEmoji(e)} style={{
-                  width: 40, height: 40, fontSize: 20, borderRadius: 'var(--r-sm)', border: '1px solid',
-                  cursor: 'pointer', transition: 'all .13s',
-                  background: emoji === e ? 'var(--gold-dim)' : '#fff',
-                  borderColor: emoji === e ? 'var(--gold-border)' : 'var(--border)',
-                }}>{e}</button>
-              ))}
+
+            {/* Upload area */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14 }}>
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                style={{
+                  width: 72, height: 72, borderRadius: '50%', border: '2px dashed var(--border)',
+                  overflow: 'hidden', cursor: 'pointer', flexShrink: 0, display: 'flex',
+                  alignItems: 'center', justifyContent: 'center', background: 'var(--cream2)',
+                  position: 'relative', transition: 'border-color .13s',
+                }}
+              >
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <span style={{ fontSize: 28 }}>{emoji}</span>
+                )}
+                {uploading && (
+                  <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: 'var(--text3)', fontFamily: 'var(--mono)' }}>
+                    uploading…
+                  </div>
+                )}
+              </div>
+              <div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    await uploadAvatar(file);
+                    e.target.value = '';
+                  }}
+                />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  style={{
+                    padding: '7px 14px', borderRadius: 'var(--r-sm)', border: '1px solid var(--border)',
+                    background: '#fff', cursor: 'pointer', fontSize: 13, fontFamily: 'var(--font)',
+                    color: 'var(--brown2)', marginBottom: 4, display: 'block',
+                  }}
+                >
+                  {uploading ? 'Uploading…' : avatarUrl ? 'Change photo' : 'Upload photo'}
+                </button>
+                {avatarUrl && (
+                  <button
+                    onClick={() => setAvatarUrl('')}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--text3)', padding: 0, fontFamily: 'var(--mono)' }}
+                  >
+                    Remove → use emoji
+                  </button>
+                )}
+                <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>JPG, PNG, WebP · max 2MB</div>
+              </div>
             </div>
+
+            {/* Emoji picker — shown only when no photo uploaded */}
+            {!avatarUrl && (
+              <div>
+                <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--text3)', marginBottom: 6 }}>Or pick an emoji instead</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {EMOJIS.map(e => (
+                    <button key={e} onClick={() => setEmoji(e)} style={{
+                      width: 40, height: 40, fontSize: 20, borderRadius: 'var(--r-sm)', border: '1px solid',
+                      cursor: 'pointer', transition: 'all .13s',
+                      background: emoji === e ? 'var(--gold-dim)' : '#fff',
+                      borderColor: emoji === e ? 'var(--gold-border)' : 'var(--border)',
+                    }}>{e}</button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -167,7 +252,11 @@ export default function SetupPage() {
           <p style={{ fontSize: 14, color: 'var(--text2)', marginBottom: 24 }}>Here's a preview of your page.</p>
 
           <Card elevated style={{ marginBottom: 20, textAlign: 'center', padding: '28px 24px' }}>
-            <div style={{ fontSize: 52, marginBottom: 12 }}>{emoji}</div>
+            {avatarUrl ? (
+              <img src={avatarUrl} alt={name} style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover', marginBottom: 12 }} />
+            ) : (
+              <div style={{ fontSize: 52, marginBottom: 12 }}>{emoji}</div>
+            )}
             <h3 style={{ fontFamily: 'var(--display)', fontSize: 22, fontWeight: 800, color: 'var(--brown)', marginBottom: 8 }}>{name}</h3>
             <p style={{ fontSize: 14, color: 'var(--text2)', marginBottom: 16, lineHeight: 1.55 }}>{bio}</p>
             <div style={{ display: 'inline-flex', gap: 8, alignItems: 'center', padding: '10px 20px', background: 'var(--cream2)', borderRadius: 100 }}>
