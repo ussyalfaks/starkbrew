@@ -124,7 +124,7 @@ export default function ExplorePage() {
                   >
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 12 }}>
                       {c.avatar_url ? (
-                        <img src={c.avatar_url} alt={c.name} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                        <img src={c.avatar_url} alt={c.name} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
                       ) : (
                         <div style={{ fontSize: 32, lineHeight: 1, flexShrink: 0 }}>{c.avatar_emoji}</div>
                       )}

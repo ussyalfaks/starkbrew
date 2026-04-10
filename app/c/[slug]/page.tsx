@@ -160,6 +160,7 @@ export default function CreatorPage({ params }: { params: Promise<{ slug: string
             src={creator.avatarUrl}
             alt={creator.name}
             style={{ width: 88, height: 88, borderRadius: '50%', objectFit: 'cover', marginBottom: 12, display: 'inline-block' }}
+            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
           />
         ) : (
           <div style={{ fontSize: 64, marginBottom: 12 }}>{creator.avatarEmoji}</div>

@@ -116,7 +116,7 @@ export default function SetupPage() {
                 }}
               >
                 {avatarUrl ? (
-                  <img src={avatarUrl} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img src={avatarUrl} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={() => setAvatarUrl('')} />
                 ) : (
                   <span style={{ fontSize: 28 }}>{emoji}</span>
                 )}
@@ -252,7 +252,7 @@ export default function SetupPage() {
 
           <Card elevated style={{ marginBottom: 20, textAlign: 'center', padding: '28px 24px' }}>
             {avatarUrl ? (
-              <img src={avatarUrl} alt={name} style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover', marginBottom: 12 }} />
+              <img src={avatarUrl} alt={name} style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover', marginBottom: 12 }} onError={() => setAvatarUrl('')} />
             ) : (
               <div style={{ fontSize: 52, marginBottom: 12 }}>{emoji}</div>
             )}

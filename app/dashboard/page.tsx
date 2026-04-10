@@ -36,7 +36,7 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="animate-fade-up" style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 28 }}>
         {profile.avatarUrl ? (
-          <img src={profile.avatarUrl} alt={profile.name} style={{ width: 52, height: 52, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+          <img src={profile.avatarUrl} alt={profile.name} style={{ width: 52, height: 52, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
         ) : (
           <div style={{ fontSize: 44 }}>{profile.avatarEmoji}</div>
         )}
