@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
-import { QRCodeSVG } from 'qrcode.react';
+import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react';
 import { useRouter } from 'next/navigation';
 import { useStore } from '@/store';
 import { networkTokens, Amount } from '@/lib/starkzap';
@@ -13,6 +13,7 @@ export default function DashboardPage() {
   const [copying, setCopying] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
   const qrOverlayRef = useRef<HTMLDivElement>(null);
+  const qrCanvasRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!wallet) return;
@@ -26,6 +27,16 @@ export default function DashboardPage() {
   const totalNum = parseFloat(profile.totalRaised);
   const goalNum = parseFloat(profile.goalAmount || '0');
   const goalPct = goalNum > 0 ? (totalNum / goalNum) * 100 : 0;
+
+  function downloadQr() {
+    const canvas = qrCanvasRef.current?.querySelector('canvas');
+    if (!canvas) return;
+    const url = canvas.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `starkbrew-${profile.slug}-qr.png`;
+    a.click();
+  }
 
   function copyLink() {
     navigator.clipboard?.writeText(pageUrl);
@@ -140,7 +151,7 @@ export default function DashboardPage() {
             <p style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--text3)', marginBottom: 20 }}>
               Scan to open your StarkBrew page
             </p>
-            <div style={{ display: 'inline-flex', padding: 12, background: '#fff', borderRadius: 'var(--r)', border: '1px solid var(--border)', marginBottom: 16 }}>
+            <div style={{ display: 'inline-flex', padding: 12, background: '#fff', borderRadius: 'var(--r)', border: '1px solid var(--border)', marginBottom: 16, cursor: 'pointer' }} title="Click to download QR" onClick={downloadQr}>
               <QRCodeSVG
                 value={pageUrl}
                 size={180}
@@ -157,20 +168,51 @@ export default function DashboardPage() {
                 }}
               />
             </div>
+            {/* Hidden canvas QR for download */}
+            <div ref={qrCanvasRef} style={{ display: 'none' }}>
+              <QRCodeCanvas
+                value={pageUrl}
+                size={400}
+                bgColor="#ffffff"
+                fgColor="#2c1a0e"
+                level="M"
+                imageSettings={{
+                  src: '/favicon.ico',
+                  x: undefined,
+                  y: undefined,
+                  height: 56,
+                  width: 56,
+                  excavate: true,
+                }}
+              />
+            </div>
             <p style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--text3)', wordBreak: 'break-all', marginBottom: 18 }}>
               {pageUrl}
             </p>
-            <button
-              onClick={() => setQrOpen(false)}
-              style={{
-                background: 'var(--brown)', color: 'var(--cream)',
-                border: 'none', borderRadius: 'var(--r-sm)',
-                padding: '8px 24px', cursor: 'pointer',
-                fontFamily: 'var(--mono)', fontSize: 13, fontWeight: 500,
-              }}
-            >
-              Close
-            </button>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+              <button
+                onClick={downloadQr}
+                style={{
+                  background: 'var(--brown)', color: 'var(--cream)',
+                  border: 'none', borderRadius: 'var(--r-sm)',
+                  padding: '8px 20px', cursor: 'pointer',
+                  fontFamily: 'var(--mono)', fontSize: 13, fontWeight: 500,
+                }}
+              >
+                Download
+              </button>
+              <button
+                onClick={() => setQrOpen(false)}
+                style={{
+                  background: 'transparent', color: 'var(--brown)',
+                  border: '1px solid var(--border)', borderRadius: 'var(--r-sm)',
+                  padding: '8px 20px', cursor: 'pointer',
+                  fontFamily: 'var(--mono)', fontSize: 13, fontWeight: 500,
+                }}
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
