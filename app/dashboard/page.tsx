@@ -1,5 +1,6 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import { useRouter } from 'next/navigation';
 import { useStore } from '@/store';
 import { networkTokens, Amount } from '@/lib/starkzap';
@@ -10,6 +11,8 @@ export default function DashboardPage() {
   const { wallet, profile, updateProfile, supports } = useStore();
   const [balance, setBalance] = useState<string | null>(null);
   const [copying, setCopying] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false);
+  const qrOverlayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!wallet) return;
@@ -29,6 +32,15 @@ export default function DashboardPage() {
     setCopying(true);
     toast('Link copied! Share it everywhere ☕');
     setTimeout(() => setCopying(false), 2000);
+  }
+
+  function shareOnTwitter() {
+    const text = `❯ I'm on starkbrew. If you like my work, you can buy me a coffee and share your thoughts 🎉☕ ${pageUrl}`;
+    window.open(
+      `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`,
+      '_blank',
+      'noopener,noreferrer',
+    );
   }
 
   return (
@@ -52,7 +64,7 @@ export default function DashboardPage() {
 
       {/* Share link */}
       <div className="animate-fade-up delay-1" style={{ marginBottom: 24 }}>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
           <div style={{ flex: 1, padding: '10px 14px', background: '#fff', border: '1px solid var(--border)', borderRadius: 'var(--r-sm)', fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--text2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {pageUrl}
           </div>
@@ -63,7 +75,105 @@ export default function DashboardPage() {
             View →
           </Button>
         </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            onClick={shareOnTwitter}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '7px 14px', borderRadius: 'var(--r-sm)',
+              border: '1px solid var(--border2)',
+              background: '#fff', cursor: 'pointer',
+              fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--brown2)',
+              fontWeight: 500,
+            }}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+            </svg>
+            Share on X
+          </button>
+          <button
+            onClick={() => setQrOpen(true)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '7px 14px', borderRadius: 'var(--r-sm)',
+              border: '1px solid var(--border2)',
+              background: '#fff', cursor: 'pointer',
+              fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--brown2)',
+              fontWeight: 500,
+            }}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" />
+              <rect x="3" y="14" width="7" height="7" />
+              <line x1="14" y1="14" x2="14" y2="14" /><line x1="17" y1="14" x2="17" y2="14" />
+              <line x1="20" y1="14" x2="20" y2="14" /><line x1="14" y1="17" x2="14" y2="17" />
+              <line x1="17" y1="17" x2="17" y2="17" /><line x1="20" y1="20" x2="20" y2="20" />
+              <line x1="20" y1="17" x2="20" y2="17" />
+            </svg>
+            QR Code
+          </button>
+        </div>
       </div>
+
+      {/* QR Code Modal */}
+      {qrOpen && (
+        <div
+          ref={qrOverlayRef}
+          onClick={(e) => { if (e.target === qrOverlayRef.current) setQrOpen(false); }}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 200,
+            background: 'rgba(44,26,14,0.45)', backdropFilter: 'blur(6px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: 24,
+          }}
+        >
+          <div className="animate-slide-up" style={{
+            background: 'var(--cream)', borderRadius: 'var(--r-lg)',
+            padding: '28px 28px 24px',
+            boxShadow: '0 24px 60px rgba(44,26,14,0.18)',
+            textAlign: 'center', maxWidth: 320, width: '100%',
+          }}>
+            <div style={{ fontFamily: 'var(--display)', fontWeight: 700, fontSize: 18, color: 'var(--brown)', marginBottom: 4 }}>
+              Your page QR code
+            </div>
+            <p style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--text3)', marginBottom: 20 }}>
+              Scan to open your StarkBrew page
+            </p>
+            <div style={{ display: 'inline-flex', padding: 12, background: '#fff', borderRadius: 'var(--r)', border: '1px solid var(--border)', marginBottom: 16 }}>
+              <QRCodeSVG
+                value={pageUrl}
+                size={180}
+                bgColor="#ffffff"
+                fgColor="#2c1a0e"
+                level="M"
+                imageSettings={{
+                  src: '/favicon.ico',
+                  x: undefined,
+                  y: undefined,
+                  height: 28,
+                  width: 28,
+                  excavate: true,
+                }}
+              />
+            </div>
+            <p style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--text3)', wordBreak: 'break-all', marginBottom: 18 }}>
+              {pageUrl}
+            </p>
+            <button
+              onClick={() => setQrOpen(false)}
+              style={{
+                background: 'var(--brown)', color: 'var(--cream)',
+                border: 'none', borderRadius: 'var(--r-sm)',
+                padding: '8px 24px', cursor: 'pointer',
+                fontFamily: 'var(--mono)', fontSize: 13, fontWeight: 500,
+              }}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Stats grid */}
       <div className="animate-fade-up delay-1" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 10, marginBottom: 24 }}>

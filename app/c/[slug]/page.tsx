@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import { usePrivy } from '@privy-io/react-auth';
 import { useStore } from '@/store';
 import { onboardSupporter, sendCoffee } from '@/lib/starkzap';
@@ -21,6 +22,9 @@ export default function CreatorPage({ params }: { params: Promise<{ slug: string
   const [progress, setProgress] = useState('');
   const [done, setDone] = useState(false);
   const [addrCopied, setAddrCopied] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
+  const qrOverlayRef = useRef<HTMLDivElement>(null);
 
   const { ready, authenticated, login, getAccessToken } = usePrivy();
   const { wallet, setWallet, addSupport } = useStore();
@@ -76,6 +80,26 @@ export default function CreatorPage({ params }: { params: Promise<{ slug: string
   const goalNum = parseFloat(creator.goalAmount || '0');
   const goalPct = goalNum > 0 ? Math.min((totalNum / goalNum) * 100, 100) : 0;
   const coffeeTotal = (parseFloat(creator.coffeePrice) * coffees).toFixed(2);
+
+  const creatorUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}/c/${slug}`
+    : `https://starkbrew.xyz/c/${slug}`;
+
+  const twitterText = `❯ I'm on starkbrew. If you like my work, you can buy me a coffee and share your thoughts 🎉☕ ${creatorUrl}`;
+
+  function handleTwitterShare() {
+    window.open(
+      `https://twitter.com/intent/tweet?text=${encodeURIComponent(twitterText)}`,
+      '_blank',
+      'noopener,noreferrer',
+    );
+  }
+
+  async function handleCopyLink() {
+    await navigator.clipboard?.writeText(creatorUrl);
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2000);
+  }
 
   async function handleSupport() {
     if (!ready) return;
@@ -174,6 +198,127 @@ export default function CreatorPage({ params }: { params: Promise<{ slug: string
           <span>· ${creator.totalRaised} raised</span>
         </div>
       </div>
+
+      {/* Share bar */}
+      <div className="animate-fade-up" style={{ display: 'flex', justifyContent: 'center', gap: 8, marginBottom: 28 }}>
+        <button
+          onClick={handleTwitterShare}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            padding: '7px 14px', borderRadius: 'var(--r-sm)',
+            border: '1px solid var(--border2)',
+            background: '#fff', cursor: 'pointer',
+            fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--brown2)',
+            fontWeight: 500,
+          }}
+        >
+          {/* X / Twitter icon */}
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+          </svg>
+          Share on X
+        </button>
+
+        <button
+          onClick={() => setQrOpen(true)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            padding: '7px 14px', borderRadius: 'var(--r-sm)',
+            border: '1px solid var(--border2)',
+            background: '#fff', cursor: 'pointer',
+            fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--brown2)',
+            fontWeight: 500,
+          }}
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" />
+            <rect x="3" y="14" width="7" height="7" />
+            <line x1="14" y1="14" x2="14" y2="14" /><line x1="17" y1="14" x2="17" y2="14" />
+            <line x1="20" y1="14" x2="20" y2="14" /><line x1="14" y1="17" x2="14" y2="17" />
+            <line x1="17" y1="17" x2="17" y2="17" /><line x1="20" y1="20" x2="20" y2="20" />
+            <line x1="20" y1="17" x2="20" y2="17" />
+          </svg>
+          QR Code
+        </button>
+
+        <button
+          onClick={handleCopyLink}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            padding: '7px 14px', borderRadius: 'var(--r-sm)',
+            border: '1px solid var(--border2)',
+            background: '#fff', cursor: 'pointer',
+            fontFamily: 'var(--mono)', fontSize: 12,
+            color: linkCopied ? 'var(--green)' : 'var(--brown2)',
+            fontWeight: 500,
+          }}
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+          </svg>
+          {linkCopied ? 'Copied!' : 'Copy link'}
+        </button>
+      </div>
+
+      {/* QR Code Modal */}
+      {qrOpen && (
+        <div
+          ref={qrOverlayRef}
+          onClick={(e) => { if (e.target === qrOverlayRef.current) setQrOpen(false); }}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 200,
+            background: 'rgba(44,26,14,0.45)', backdropFilter: 'blur(6px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: 24,
+          }}
+        >
+          <div className="animate-slide-up" style={{
+            background: 'var(--cream)', borderRadius: 'var(--r-lg)',
+            padding: '28px 28px 24px',
+            boxShadow: '0 24px 60px rgba(44,26,14,0.18)',
+            textAlign: 'center', maxWidth: 320, width: '100%',
+          }}>
+            <div style={{ fontFamily: 'var(--display)', fontWeight: 700, fontSize: 18, color: 'var(--brown)', marginBottom: 4 }}>
+              Share {creator.name}'s page
+            </div>
+            <p style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--text3)', marginBottom: 20 }}>
+              Scan to open this page
+            </p>
+            <div style={{ display: 'inline-flex', padding: 12, background: '#fff', borderRadius: 'var(--r)', border: '1px solid var(--border)', marginBottom: 16 }}>
+              <QRCodeSVG
+                value={creatorUrl}
+                size={180}
+                bgColor="#ffffff"
+                fgColor="#2c1a0e"
+                level="M"
+                imageSettings={{
+                  src: '/favicon.ico',
+                  x: undefined,
+                  y: undefined,
+                  height: 28,
+                  width: 28,
+                  excavate: true,
+                }}
+              />
+            </div>
+            <p style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--text3)', wordBreak: 'break-all', marginBottom: 18 }}>
+              {creatorUrl}
+            </p>
+            <button
+              onClick={() => setQrOpen(false)}
+              style={{
+                background: 'var(--brown)', color: 'var(--cream)',
+                border: 'none', borderRadius: 'var(--r-sm)',
+                padding: '8px 24px', cursor: 'pointer',
+                fontFamily: 'var(--mono)', fontSize: 13, fontWeight: 500,
+              }}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Goal */}
       {creator.goalAmount && creator.goalLabel && (
