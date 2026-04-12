@@ -108,7 +108,7 @@ export default function ExplorePage() {
         );
 
         return (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 14 }}>
             {filtered.map((c, i) => {
               const totalNum = parseFloat(c.total_raised);
               const goalNum  = parseFloat(c.goal_amount ?? '0');

@@ -123,7 +123,7 @@ export default function HomePage() {
         <p style={{ fontFamily: 'var(--mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text3)', marginBottom: 20, textAlign: 'center' }}>
           How it works
         </p>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
           {[
             ['☕', 'Set your price', 'Choose how much one coffee costs — e.g. $3 USDC'],
             ['🔗', 'Share your link', 'starkbrew.xyz/c/yourname — share anywhere'],
