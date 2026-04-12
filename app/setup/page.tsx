@@ -66,7 +66,7 @@ export default function SetupPage() {
       }
 
       const token = await getAccessToken();
-      await fetch('/api/creator-upsert', {
+      const res = await fetch('/api/creator-upsert', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -74,6 +74,11 @@ export default function SetupPage() {
         },
         body: JSON.stringify(savedProfile),
       });
+
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}));
+        throw new Error(json.error || 'Failed to save profile');
+      }
 
       toast(isEditing ? 'Profile updated!' : 'Page created!');
       router.push('/dashboard');
